@@ -52,13 +52,15 @@ You'll see this summary:
 
 ```
 Summary:
-  Total:        30.0046 secs
-  Slowest:      0.1692 secs
-  Fastest:      0.0009 secs
-  Average:      0.0138 secs
-  Requests/sec: 3525.3231
-     
+  Total:	30.0069 secs
+  Slowest:	0.1508 secs
+  Fastest:	0.0004 secs
+  Average:	0.0073 secs
+  Requests/sec:	13692.4227
+
 Latency distribution:
-  95% in 0.0585 secs
-  99% in 0.0842 secs
+  95% in 0.0135 secs
+  99% in 0.0187 secs
 ```  
+
+>Note: For best performance run scripts `./build-and-run.sh` and `tests/perf.sh` from terminal
