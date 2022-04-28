@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+
+  url-shortener:
+    container_name: 'url-shortener'
+    build:
+      context: .
+      dockerfile: src/main/docker/Dockerfile.native-micro-build
+    ports:
+      - "8080:8080"
+    networks:
+      - app-tier
+
+networks:
+  app-tier:
+    driver: bridge
