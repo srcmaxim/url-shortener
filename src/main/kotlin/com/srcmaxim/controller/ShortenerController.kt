@@ -65,8 +65,10 @@ class ShortenerController(
             val shortUrl = shortenerService.createShortUrlPath(parsedOriginalUrl, parsedCustomAlias, ttl)
             val shortUrlPath = shortUrl.shortUrlPath.toString()
             val uri: URI = info.baseUriBuilder.path(shortUrlPath).build()
+            logger.info("Creating redirect successful: $originalUrl $customAlias $uri")
             Response.ok(uri.toString()).build()
         } catch (e: SaveException) {
+            logger.info("Creating redirect exception: $originalUrl $customAlias ${e.message}")
             Response.status(Response.Status.BAD_REQUEST)
                 .entity(e.message)
                 .build()

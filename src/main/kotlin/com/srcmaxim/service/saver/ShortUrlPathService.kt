@@ -1,6 +1,5 @@
 package com.srcmaxim.service.saver
 
-import org.roaringbitmap.RoaringBitmap
 import java.net.URI
 import java.util.*
 import java.util.random.RandomGenerator.SplittableGenerator
@@ -9,25 +8,18 @@ import javax.enterprise.context.ApplicationScoped
 @ApplicationScoped
 class ShortUrlPathService {
 
-    private val base64Keys = RoaringBitmap()
     private val threadLocalRandom = getSplittableGenerator()
     private val maxBase64Path = 6
-
     fun getShortUrlPath(): URI {
-        while (true) {
-            val random = threadLocalRandom.get().nextInt()
-            val bytes = byteArrayOf(
-                random.ushr(24).toByte(),
-                random.ushr(16).toByte(),
-                random.ushr(8).toByte(),
-                random.toByte()
-            )
-            if (base64Keys.checkedAdd(random)) {
-                continue
-            }
-            val base64Path = Base64.getUrlEncoder().encodeToString(bytes)
-            return URI.create(base64Path.substring(0, maxBase64Path))
-        }
+        val random = threadLocalRandom.get().nextInt()
+        val bytes = byteArrayOf(
+            random.ushr(24).toByte(),
+            random.ushr(16).toByte(),
+            random.ushr(8).toByte(),
+            random.toByte()
+        )
+        val base64Path = Base64.getUrlEncoder().encodeToString(bytes)
+        return URI.create(base64Path.substring(0, maxBase64Path))
     }
 
     /**
