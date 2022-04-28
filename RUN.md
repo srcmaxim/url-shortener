@@ -28,5 +28,37 @@ You can run your application in dev mode that enables live coding using:
 ## Run smoke tests
 
 ```shell script
-smoke/local.sh
+tests/smoke.sh
 ```
+
+You'll see these checks:
+
+```
+     ✓ /shorten
+     ✓ /shorten ttl
+     ✓ /shorten customAlias
+     ✓ /shorten customAlias ttl
+     ✓ /shorten customAlias duplicate
+     ✓ /redirect expire
+```     
+
+## Run performance tests
+
+```shell script
+tests/perf.sh
+```
+
+You'll see this summary:
+
+```
+Summary:
+  Total:        30.0046 secs
+  Slowest:      0.1692 secs
+  Fastest:      0.0009 secs
+  Average:      0.0138 secs
+  Requests/sec: 3525.3231
+     
+Latency distribution:
+  95% in 0.0585 secs
+  99% in 0.0842 secs
+```  

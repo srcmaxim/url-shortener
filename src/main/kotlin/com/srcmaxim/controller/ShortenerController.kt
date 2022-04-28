@@ -47,7 +47,7 @@ class ShortenerController(
         @QueryParam("ttl") ttl: Int?,
         @Context info: UriInfo
     ): Uni<Response> = resourceScope {
-        logger.info("Creating redirect: $originalUrl $customAlias")
+        logger.debug("Creating redirect: $originalUrl $customAlias")
         val parsedOriginalUrl: URL = try {
             URL(originalUrl)
         } catch (e: MalformedURLException) {
@@ -65,10 +65,10 @@ class ShortenerController(
             val shortUrl = shortenerService.createShortUrlPath(parsedOriginalUrl, parsedCustomAlias, ttl)
             val shortUrlPath = shortUrl.shortUrlPath.toString()
             val uri: URI = info.baseUriBuilder.path(shortUrlPath).build()
-            logger.info("Creating redirect successful: $originalUrl $customAlias $uri")
+            logger.debug("Creating redirect successful: $originalUrl $customAlias $uri")
             Response.ok(uri.toString()).build()
         } catch (e: SaveException) {
-            logger.info("Creating redirect exception: $originalUrl $customAlias ${e.message}")
+            logger.debug("Creating redirect exception: $originalUrl $customAlias ${e.message}")
             Response.status(Response.Status.BAD_REQUEST)
                 .entity(e.message)
                 .build()
@@ -86,13 +86,13 @@ class ShortenerController(
     @Path("/{shortUrl}")
     fun redirectShortToOriginalUrl(@PathParam("shortUrl") shortUrl: String): Uni<Response> =
         resourceScope {
-            logger.info("Redirecting: /$shortUrl")
+            logger.debug("Redirecting: /$shortUrl")
             val originalUrl = shortenerService.getRedirectUrl(shortUrl)?.originalUrl
             if (originalUrl != null) {
-                logger.info("Redirect successful: $originalUrl")
+                logger.debug("Redirect successful: $originalUrl")
                 Response.temporaryRedirect(originalUrl.toURI()).build()
             } else {
-                logger.info("Redirect not found: /$shortUrl")
+                logger.debug("Redirect not found: /$shortUrl")
                 Response.status(Response.Status.NOT_FOUND)
                     .entity("No URL Found")
                     .build()
@@ -100,7 +100,7 @@ class ShortenerController(
         }
 
     private fun badRequest(message: String, parsedString: String): Response {
-        logger.info("$message: $parsedString")
+        logger.debug("$message: $parsedString")
         return Response.status(Response.Status.BAD_REQUEST)
             .entity(message)
             .build()
