@@ -6,12 +6,13 @@ import com.srcmaxim.service.saver.AliasSaver
 import com.srcmaxim.service.saver.Base64Saver
 import io.quarkus.cache.Cache
 import io.quarkus.cache.CacheName
-import io.smallrye.mutiny.coroutines.awaitSuspending
+import io.quarkus.cache.CacheResult
+import io.quarkus.vertx.ConsumeEvent
+import org.jboss.logging.Logger
 import java.net.URI
 import java.net.URL
 import javax.enterprise.context.ApplicationScoped
 import javax.inject.Inject
-
 @ApplicationScoped
 class ShortenerService @Inject constructor(
     private val aliasSaver: AliasSaver,
@@ -20,6 +21,8 @@ class ShortenerService @Inject constructor(
     @CacheName("shortToOriginUrl") private val cache: Cache
 ) {
 
+    private val logger = Logger.getLogger(ShortenerService::class.java)
+
     fun createShortUrlPath(originalUrl: URL, customAlias: URI?, ttl: Int?): ShortUrl {
         return when (customAlias) {
             null -> base64Saver.save(originalUrl, ttl)
@@ -27,7 +30,16 @@ class ShortenerService @Inject constructor(
         }
     }
 
-    suspend fun getRedirectUrl(shortUrlPath: String): ShortUrl? = cache.get(shortUrlPath) {
-        shortenerRepository.findById(it)
-    }.awaitSuspending()
+    @CacheResult(cacheName = "shortToOriginUrl")
+    fun getRedirectUrl(shortUrlPath: String): ShortUrl? =
+        shortenerRepository.findById(shortUrlPath)
+
+    @ConsumeEvent("invalidateShortToOriginUrl")
+    fun invalidateCacheKey(shortUrlPath: String) {
+        cache.invalidate(shortUrlPath)
+            .subscribe().with {
+                logger.debugf("Expired key: %s", shortUrlPath)
+            }
+    }
 }
+

@@ -2,13 +2,6 @@ package com.srcmaxim.controller
 
 import com.srcmaxim.service.ShortenerService
 import com.srcmaxim.service.saver.SaveException
-import io.smallrye.mutiny.Uni
-import io.smallrye.mutiny.coroutines.asUni
-import io.smallrye.mutiny.infrastructure.Infrastructure
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
 import org.jboss.logging.Logger
 import java.net.MalformedURLException
 import java.net.URI
@@ -46,29 +39,30 @@ class ShortenerController(
         @QueryParam("customAlias") customAlias: String?,
         @QueryParam("ttl") ttl: Int?,
         @Context info: UriInfo
-    ): Uni<Response> = resourceScope {
-        logger.debug("Creating redirect: $originalUrl $customAlias")
+    ): Response {
+        logger.debugf("Creating redirect: %s %s", originalUrl, customAlias)
         val parsedOriginalUrl: URL = try {
             URL(originalUrl)
         } catch (e: MalformedURLException) {
-            return@resourceScope badRequest("Original URL is malformed", originalUrl)
+            return badRequest("Original URL is malformed", originalUrl)
         }
         val parsedCustomAlias: URI? = customAlias?.let {
             try {
                 URI(it)
             } catch (e: URISyntaxException) {
-                return@resourceScope badRequest("Custom alias is malformed", it)
+                return badRequest("Custom alias is malformed", it)
             }
         }
 
-        return@resourceScope try {
-            val shortUrl = shortenerService.createShortUrlPath(parsedOriginalUrl, parsedCustomAlias, ttl)
+        return try {
+            val shortUrl =
+                shortenerService.createShortUrlPath(parsedOriginalUrl, parsedCustomAlias, ttl)
             val shortUrlPath = shortUrl.shortUrlPath.toString()
             val uri: URI = info.baseUriBuilder.path(shortUrlPath).build()
-            logger.debug("Creating redirect successful: $originalUrl $customAlias $uri")
+            logger.debugf("Creating redirect successful: %s %s %s", originalUrl, customAlias, uri)
             Response.ok(uri.toString()).build()
         } catch (e: SaveException) {
-            logger.debug("Creating redirect exception: $originalUrl $customAlias ${e.message}")
+            logger.debugf("Creating redirect exception: %s %s %s", originalUrl, customAlias, e.message)
             Response.status(Response.Status.BAD_REQUEST)
                 .entity(e.message)
                 .build()
@@ -84,31 +78,25 @@ class ShortenerController(
      */
     @GET
     @Path("/{shortUrl}")
-    fun redirectShortToOriginalUrl(@PathParam("shortUrl") shortUrl: String): Uni<Response> =
-        resourceScope {
-            logger.debug("Redirecting: /$shortUrl")
-            val originalUrl = shortenerService.getRedirectUrl(shortUrl)?.originalUrl
-            if (originalUrl != null) {
-                logger.debug("Redirect successful: $originalUrl")
-                Response.temporaryRedirect(originalUrl.toURI()).build()
-            } else {
-                logger.debug("Redirect not found: /$shortUrl")
-                Response.status(Response.Status.NOT_FOUND)
-                    .entity("No URL Found")
-                    .build()
-            }
+    fun redirectShortToOriginalUrl(@PathParam("shortUrl") shortUrl: String): Response {
+        logger.debugf("Redirecting: /%s", shortUrl)
+        val originalUrl = shortenerService.getRedirectUrl(shortUrl)?.originalUrl
+        return if (originalUrl != null) {
+            logger.debugf("Redirect successful: %s", originalUrl)
+            Response.temporaryRedirect(originalUrl.toURI()).build()
+        } else {
+            logger.debugf("Redirect not found: /%s", shortUrl)
+            Response.status(Response.Status.NOT_FOUND)
+                .entity("No URL Found")
+                .build()
         }
+    }
 
     private fun badRequest(message: String, parsedString: String): Response {
-        logger.debug("$message: $parsedString")
+        logger.debugf("%s: %s", message, parsedString)
         return Response.status(Response.Status.BAD_REQUEST)
             .entity(message)
             .build()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun <T, R> T.resourceScope(block: suspend T.() -> R): Uni<R> =
-        GlobalScope.async(Infrastructure.getDefaultExecutor().asCoroutineDispatcher()) {
-            block.invoke(this@resourceScope)
-        }.asUni()
 }

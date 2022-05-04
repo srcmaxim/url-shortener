@@ -1,19 +1,20 @@
 package com.srcmaxim.repository
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import io.vertx.mutiny.core.eventbus.EventBus
+import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentSkipListMap
-import kotlin.math.max
+import kotlin.math.min
 
 class Cleaner(
-    private val kvDatabase: ConcurrentHashMap<String, String>
+    private val kvDatabase: ConcurrentHashMap<String, String>,
+    private val bus: EventBus
 ) {
 
     private val expireAtStore = ConcurrentSkipListMap<Long, String>()
 
     init {
+        @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch {
             while (true) {
                 cleanerRoutine()
@@ -36,6 +37,7 @@ class Cleaner(
         for (ttlKey in expired) {
             kvDatabase.remove(ttlKey.value)
             expireAtStore.remove(ttlKey.key)
+            bus.publish("invalidateShortToOriginUrl", ttlKey.value)
         }
     }
 
@@ -45,7 +47,7 @@ class Cleaner(
         if (firstEntry != null) {
             val expireAt = firstEntry.key
             var sleep = expireAt - System.currentTimeMillis()
-            sleep = max(sleep, expireAtMinDuration)
+            sleep = min(sleep, expireAtMinDuration)
             delay(sleep)
         } else {
             // ignore, no value in set

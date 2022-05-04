@@ -160,7 +160,7 @@ export default () => {
                 return r.status === 200
             },
         });
-        sleep(10)
+        sleep(1)
         check(http.get(redirect), {
             '/redirect expire': (r) => {
                 return r.status === 404
