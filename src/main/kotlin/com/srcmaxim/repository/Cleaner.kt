@@ -29,24 +29,24 @@ class Cleaner(
     private suspend fun cleanerRoutine() {
         val time = System.currentTimeMillis()
         removeExpired(time)
-        sleepToNextDuration()
+        sleepToNextDuration(time)
     }
 
     private fun removeExpired(time: Long) {
-        val expired = expireAtStore.headMap(time)
+        val expired = expireAtStore.headMap(time, true)
         for (ttlKey in expired) {
             kvDatabase.remove(ttlKey.value)
-            expireAtStore.remove(ttlKey.key)
             bus.publish("invalidateShortToOriginUrl", ttlKey.value)
         }
+        expired.clear()
     }
 
-    private suspend fun sleepToNextDuration() {
+    private suspend fun sleepToNextDuration(time: Long) {
         val expireAtMinDuration = 100L
         val firstEntry = expireAtStore.firstEntry()
         if (firstEntry != null) {
             val expireAt = firstEntry.key
-            var sleep = expireAt - System.currentTimeMillis()
+            var sleep = expireAt - time
             sleep = min(sleep, expireAtMinDuration)
             delay(sleep)
         } else {
