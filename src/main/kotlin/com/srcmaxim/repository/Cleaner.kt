@@ -22,7 +22,8 @@ class Cleaner(
         }
     }
 
-    fun addExpire(expireAt: Long, key: String) {
+    fun addExpire(ttl: Int, key: String) {
+        val expireAt = ttl + System.currentTimeMillis()
         expireAtStore[expireAt] = key
     }
 

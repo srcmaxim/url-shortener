@@ -23,9 +23,8 @@ class ShortenerRepository(
         val key = shortUrl.shortUrlPath.toString()
         val value = shortUrl.originalUrl.toString()
         val firstTime = kvDatabase.putIfAbsent(key, value) == null
-        if (firstTime && ttl != null) {
-            val expireAt = ttl + System.currentTimeMillis()
-            cleaner.addExpire(expireAt, key)
+        if (firstTime) {
+            ttl?.let { cleaner.addExpire(it, key) }
         }
         return firstTime
     }
