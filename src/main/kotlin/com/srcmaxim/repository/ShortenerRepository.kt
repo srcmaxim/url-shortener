@@ -15,7 +15,9 @@ class ShortenerRepository(
 ) {
 
     private val kvDatabase = ConcurrentHashMap<String, String>(initialDatabaseCapacity)
-    private val cleaner = Cleaner(kvDatabase, bus)
+    private val cleaner = Cleaner(kvDatabase) {
+        bus.publish("invalidateShortToOriginUrl", it)
+    }
 
     fun saveIfNotExists(shortUrl: ShortUrl, ttl: Int?): Boolean {
         val key = shortUrl.shortUrlPath.toString()

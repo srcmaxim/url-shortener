@@ -1,14 +1,14 @@
 package com.srcmaxim.repository
 
-import io.vertx.mutiny.core.eventbus.EventBus
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentSkipListMap
+import java.util.function.Consumer
 import kotlin.math.min
 
 class Cleaner(
     private val kvDatabase: ConcurrentHashMap<String, String>,
-    private val bus: EventBus
+    private val invalidateByKey: Consumer<String>
 ) {
 
     private val expireAtStore = ConcurrentSkipListMap<Long, String>()
@@ -36,7 +36,7 @@ class Cleaner(
         val expired = expireAtStore.headMap(time, true)
         for (ttlKey in expired) {
             kvDatabase.remove(ttlKey.value)
-            bus.publish("invalidateShortToOriginUrl", ttlKey.value)
+            invalidateByKey.accept(ttlKey.value)
         }
         expired.clear()
     }
