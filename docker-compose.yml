@@ -9,6 +9,21 @@ services:
       dockerfile: src/main/docker/Dockerfile.native-micro-build
     ports:
       - "8080:8080"
+    environment:
+      quarkus_cassandra_contact_points: "cassandra:9042"
+      quarkus_cassandra_local_datacenter: dc1
+    networks:
+      - app-tier
+
+  cassandra:
+    container_name: cassandra
+    image: 'bitnami/cassandra:4.0.3'
+    volumes:
+      - ./cassandra-init.cql:/docker-entrypoint-initdb.d/init.cql
+    ports:
+      - "9042:9042"
+    environment:
+      CASSANDRA_HOST: cassandra
     networks:
       - app-tier
 

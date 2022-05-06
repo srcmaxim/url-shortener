@@ -32,8 +32,8 @@ class ShortenerController(
      */
     @POST
     @Path("/shorten")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.TEXT_PLAIN)
     fun createShortUrl(
         originalUrl: String,
         @QueryParam("customAlias") customAlias: String?,

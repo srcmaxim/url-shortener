@@ -13,6 +13,7 @@ import java.net.URI
 import java.net.URL
 import javax.enterprise.context.ApplicationScoped
 import javax.inject.Inject
+
 @ApplicationScoped
 class ShortenerService @Inject constructor(
     private val aliasSaver: AliasSaver,

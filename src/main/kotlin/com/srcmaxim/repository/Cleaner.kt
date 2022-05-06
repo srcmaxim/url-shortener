@@ -1,17 +1,16 @@
 package com.srcmaxim.repository
 
 import kotlinx.coroutines.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentSkipListMap
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
 import kotlin.math.min
 
 class Cleaner(
-    private val kvDatabase: ConcurrentHashMap<String, String>,
     private val invalidateByKey: Consumer<String>
 ) {
 
-    private val expireAtStore = ConcurrentSkipListMap<Long, String>()
+    private val expireAtStore = ConcurrentSkipListMap<Long, CopyOnWriteArrayList<String>>()
 
     init {
         @OptIn(DelicateCoroutinesApi::class)
@@ -24,7 +23,8 @@ class Cleaner(
 
     fun addExpire(ttl: Int, key: String) {
         val expireAt = ttl + System.currentTimeMillis()
-        expireAtStore[expireAt] = key
+        val keys = expireAtStore.computeIfAbsent(expireAt) { CopyOnWriteArrayList() }
+        keys.add(key)
     }
 
     private suspend fun cleanerRoutine() {
@@ -36,8 +36,7 @@ class Cleaner(
     private fun removeExpired(time: Long) {
         val expired = expireAtStore.headMap(time, true)
         for (ttlKey in expired) {
-            kvDatabase.remove(ttlKey.value)
-            invalidateByKey.accept(ttlKey.value)
+            ttlKey.value.forEach(invalidateByKey)
         }
         expired.clear()
     }
